@@ -74,6 +74,8 @@ export interface RedshiftOptions {
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
+  roleArn?: string;
+  sourceIdentity?: string;
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;

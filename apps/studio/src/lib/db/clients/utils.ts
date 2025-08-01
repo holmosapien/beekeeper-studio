@@ -4,12 +4,12 @@ import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
-import {fromIni} from "@aws-sdk/credential-providers";
-import {Signer} from "@aws-sdk/rds-signer";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { fromIni } from "@aws-sdk/credential-providers";
+import { Signer } from "@aws-sdk/rds-signer";
+import { RuntimeConfigAwsCredentialIdentityProvider, AwsCredentialIdentity } from "@aws-sdk/types";
 import globals from "@/common/globals";
-import {
-  AWSCredentials
-} from "@/lib/db/authentication/amazon-redshift";
+import { AWSCredentials } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
@@ -357,26 +357,29 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
 }
 
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
-  let {awsRegion: region} = redshiftOptions
+  const { awsProfile, accessKeyId, secretAccessKey, roleArn, sourceIdentity } = redshiftOptions
+  let { awsRegion: region } = redshiftOptions
 
   let credentials: {
     profile?: string,
     accessKeyId?: string,
     secretAccessKey?: string,
+    sessionToken?: string,
   } = {
     profile: awsProfile || "default"
   }
 
   if (!region) {
-    const { configFile } = await loadSharedConfigFiles();
-    region = configFile[awsProfile || "default"]?.region;
+    const { configFile } = await loadSharedConfigFiles()
+
+    region = configFile[awsProfile || "default"]?.region
+
     if (!region) {
       throw new Error(`Region not found in profile "${awsProfile}" and no region explicitly provided.`);
     }
   }
 
-  if(accessKeyId && secretAccessKey) {
+  if (accessKeyId && secretAccessKey) {
     credentials = {
       profile: awsProfile || "default",
       accessKeyId,
@@ -384,14 +387,41 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
     }
   }
 
-  const nodeProviderChainCredentials = fromIni(credentials);
+  // First we'll load the base credentials.
+  const baseCredentials = fromIni(credentials)
+  let nodeProviderChainCredentials: RuntimeConfigAwsCredentialIdentityProvider | AwsCredentialIdentity = baseCredentials
+
+  // Now if we have a role ARN and source identity, we'll use the STS client to assume the role.
+  // Otherwise we'll just use the base credentials.
+  if (roleArn && sourceIdentity) {
+    const stsClient = new STSClient({
+      region,
+      credentials: baseCredentials
+    })
+
+    const assumeRoleCommand = new AssumeRoleCommand({
+      RoleArn: roleArn,
+      SourceIdentity: sourceIdentity,
+      RoleSessionName: "BeekeeperStudioSession"
+    })
+
+    const assumeRoleResponse = await stsClient.send(assumeRoleCommand)
+
+    nodeProviderChainCredentials = {
+      accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
+      secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
+      sessionToken: assumeRoleResponse.Credentials.SessionToken
+    }
+  }
+
   const signer = new Signer({
     credentials: nodeProviderChainCredentials,
     hostname,
     region,
     port,
     username,
-  });
+  })
+
   return  await signer.getAuthToken();
 }
 

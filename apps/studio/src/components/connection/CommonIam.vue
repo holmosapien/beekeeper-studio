@@ -30,14 +30,32 @@
           />
         </h4>
       </div>
-      <div v-show="isProfileAuth" class="form-group">
-        <label for="awsProfile"> AWS Profile </label>
-        <input
-          name="awsProfile"
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.awsProfile"
-        >
+      <div v-show="isProfileAuth">
+        <div class="form-group">
+          <label for="awsProfile"> AWS Profile </label>
+          <input
+            name="awsProfile"
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.awsProfile"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Role ARN"> Role ARN </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.roleArn"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Source Identity"> Source Identity </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.sourceIdentity"
+          >
+        </div>
       </div>
       <div v-show="isKeyAuth" >
         <div class="form-group">

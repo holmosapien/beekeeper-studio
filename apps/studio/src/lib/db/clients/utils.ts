@@ -357,7 +357,7 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
 }
 
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const { awsProfile, accessKeyId, secretAccessKey, roleArn, sourceIdentity } = redshiftOptions
+  const { awsProfile, accessKeyId, secretAccessKey, assumeRole, roleArn, sourceIdentity } = redshiftOptions
   let { awsRegion: region } = redshiftOptions
 
   let credentials: {
@@ -393,7 +393,7 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
 
   // Now if we have a role ARN and source identity, we'll use the STS client to assume the role.
   // Otherwise we'll just use the base credentials.
-  if (roleArn && sourceIdentity) {
+  if (assumeRole && roleArn) {
     const stsClient = new STSClient({
       region,
       credentials: baseCredentials

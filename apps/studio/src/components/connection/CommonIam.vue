@@ -30,34 +30,16 @@
           />
         </h4>
       </div>
-      <div v-show="isProfileAuth">
-        <div class="form-group">
-          <label for="awsProfile"> AWS Profile </label>
-          <input
-            name="awsProfile"
-            type="text"
-            class="form-control"
-            v-model="config.redshiftOptions.awsProfile"
-          >
-        </div>
-        <div class="form-group">
-          <label for="Role ARN"> Role ARN </label>
-          <input
-            type="text"
-            class="form-control"
-            v-model="config.redshiftOptions.roleArn"
-          >
-        </div>
-        <div class="form-group">
-          <label for="Source Identity"> Source Identity </label>
-          <input
-            type="text"
-            class="form-control"
-            v-model="config.redshiftOptions.sourceIdentity"
-          >
-        </div>
+      <div v-show="isProfileAuth" class="form-group">
+        <label for="awsProfile"> AWS Profile </label>
+        <input
+          name="awsProfile"
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.awsProfile"
+        >
       </div>
-      <div v-show="isKeyAuth" >
+      <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">
             Access Key ID
@@ -88,6 +70,36 @@
           class="form-control"
           v-model="config.redshiftOptions.awsRegion"
         >
+      </div>
+      <div class="form-group">
+        <h4
+          class="advanced-heading flex"
+          :class="{enabled: config.redshiftOptions.assumeRole}"
+        >
+          <span class="expand">Assume Role</span>
+          <x-switch
+            @click.prevent="toggleAssumeRole"
+            :toggled="config.redshiftOptions.assumeRole"
+          />
+        </h4>
+      </div>
+      <div v-show="assumeRole">
+        <div class="form-group">
+          <label for="Role ARN"> Role ARN </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.roleArn"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Source Identity"> Source Identity </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.sourceIdentity"
+          >
+        </div>
       </div>
       <div v-show="isRedshift">
         <div class="form-group">
@@ -125,11 +137,12 @@ export default {
   data() {
     return {
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      isServerless: this.config.redshiftOptions?.isServerless
+      isServerless: this.config.redshiftOptions?.isServerless,
+      assumeRole: this.config.redshiftOptions?.assumeRole || false,
     };
   },
   computed: {
-    isRedshift(){
+    isRedshift() {
       return this.config.connectionType === 'redshift'
     },
     isKeyAuth() {
@@ -137,7 +150,7 @@ export default {
     },
     isProfileAuth() {
       return this.authType === 'iam_file';
-    }
+    },
   },
   methods: {
     toggleIAMAuthentication() {
@@ -148,6 +161,10 @@ export default {
     toggleServerless() {
       this.config.redshiftOptions.isServerless = !this.config.redshiftOptions.isServerless
     },
-  }
+    toggleAssumeRole() {
+      this.assumeRole = !this.assumeRole;
+      this.config.redshiftOptions.assumeRole = this.assumeRole;
+    },
+  },
 }
 </script>

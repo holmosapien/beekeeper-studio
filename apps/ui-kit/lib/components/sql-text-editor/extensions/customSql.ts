@@ -37,6 +37,7 @@ function extendedSql(
   additionalCompletionSource?: CompletionSource
 ): Extension {
   const sqlExtension = sql(config);
+
   return [
     entities,
     additionalCompletionSourceFacet.of(additionalCompletionSource),
@@ -58,6 +59,7 @@ function applySqlExtension(
   options?: {
     defaultSchema?: string;
     entities?: Entity[];
+    upperCaseKeywords?: boolean;
   }
 ) {
   const sqlExtension = sql({
@@ -65,6 +67,7 @@ function applySqlExtension(
     schema: options?.entities
       ? buildSchema(options.entities, options.defaultSchema)
       : undefined,
+    upperCaseKeywords: options?.upperCaseKeywords,
   });
 
   view.dispatch({

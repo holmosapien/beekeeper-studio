@@ -5,6 +5,7 @@ import { sqlHighlighter } from "./sqlHighlighter";
 import { querySelection } from "./querySelection";
 import type { QuerySelectionChangeParams } from "./querySelection";
 import { Options } from "sql-query-identifier";
+import { SQLConfig } from "@codemirror/lang-sql";
 
 export { applyColumnsGetter } from "./sqlContextComplete";
 export type { ColumnsGetter } from "./sqlContextComplete";
@@ -21,8 +22,12 @@ export type SQLExtensionsConfig = {
  * Get all base SQL extensions
  */
 export function extensions(config: SQLExtensionsConfig) {
+  const sqlConfig: SQLConfig = {
+    upperCaseKeywords: true,
+  };
+
   return [
-    sql(undefined, sqlCompletionSource),
+    sql(sqlConfig, sqlCompletionSource),
     sqlHighlighter,
     removeQueryQuotesExtension(),
     sqlContextComplete(),

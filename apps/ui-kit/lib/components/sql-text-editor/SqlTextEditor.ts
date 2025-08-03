@@ -33,6 +33,7 @@ export class SqlTextEditor extends TextEditor {
     applySqlExtension(this.view, {
       defaultSchema: completionSource.defaultSchema,
       entities: completionSource.entities,
+      upperCaseKeywords: true,
     });
   }
 
